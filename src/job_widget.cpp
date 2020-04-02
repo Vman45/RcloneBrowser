@@ -4,7 +4,8 @@
 JobWidget::JobWidget(QProcess *process, const QString &info,
                      const QStringList &args, const QString &source,
                      const QString &dest, const QString &uniqueID,
-                     const QString &transferMode, QWidget *parent)
+                     const QString &transferMode, const QString &requestId,
+                     QWidget *parent)
     : QWidget(parent), mProcess(process) {
   ui.setupUi(this);
 
@@ -24,6 +25,7 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
 
   QString infoTrimmed;
 
+  mRequestId = requestId;
   mUniqueID = uniqueID;
   mTransferMode = transferMode;
 
@@ -344,5 +346,7 @@ void JobWidget::cancel() {
 }
 
 QString JobWidget::getUniqueID() { return mUniqueID; }
+
+QString JobWidget::getRequestId() { return mRequestId; }
 
 QString JobWidget::getTransferMode() { return mTransferMode; }

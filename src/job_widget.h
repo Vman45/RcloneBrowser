@@ -9,7 +9,8 @@ class JobWidget : public QWidget {
 public:
   JobWidget(QProcess *process, const QString &info, const QStringList &args,
             const QString &source, const QString &dest, const QString &uniqueID,
-            const QString &transferMode, QWidget *parent = nullptr);
+            const QString &transferMode, const QString &requestId,
+            QWidget *parent = nullptr);
   ~JobWidget();
 
   void showDetails();
@@ -18,6 +19,7 @@ public:
 public slots:
   void cancel();
   QString getUniqueID();
+  QString getRequestId();
   QString getTransferMode();
 
 signals:
@@ -36,4 +38,5 @@ private:
 
   QString mUniqueID = "";
   QString mTransferMode = "";
+  QString mRequestId = "";
 };
