@@ -97,6 +97,10 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       QIcon(":media/images/qbutton_icons/run" + img_add + ".png"));
   ui.runTask->setIconSize(QSize(24, 24));
 
+  ui.editTask->setIcon(
+      QIcon(":media/images/qbutton_icons/edit" + img_add + ".png"));
+  ui.runTask->setIconSize(QSize(24, 24));
+
   ui.cancel->setIcon(
       QIcon(":media/images/qbutton_icons/cancel" + img_add + ".png"));
   ui.cancel->setIconSize(QSize(24, 24));
@@ -393,6 +397,60 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
     ui.cancelScheduleEdit->setEnabled(false);
   });
 
+  QObject::connect(ui.saveSchedule, &QPushButton::clicked, this, [=]() {
+    if (ui.schedulerName->text().isEmpty()) {
+      QMessageBox::warning(this, "Warning",
+                           "Please enter scheduler name to save.");
+      ui.schedulerName->setFocus(Qt::FocusReason::OtherFocusReason);
+      return;
+    }
+
+    if (ui.dailyState->isChecked()) {
+    }
+
+    if (ui.cronState->isChecked()) {
+
+      QString cronExp = enhanceCron(ui.cron->text().trimmed()) + " *";
+
+      QCron cron(cronExp);
+
+      if (!cron.isValid()) {
+        QMessageBox::warning(this, "Cron validation",
+                             QString("Your cron definition:\n\n" +
+                                     ui.cron->text().trimmed() +
+                                     "\n\nis not valid."),
+                             QMessageBox::Ok);
+        ui.tabWidget->setCurrentIndex(1);
+        ui.cron->setFocus(Qt::FocusReason::OtherFocusReason);
+        return;
+      }
+    }
+
+    // save task
+    applyScreenToSettings();
+    emit save();
+    applySettingsToScreen();
+    ui.saveSchedule->setEnabled(false);
+    ui.cancelScheduleEdit->setEnabled(false);
+    // start new schedule
+  });
+
+  QObject::connect(ui.editTask, &QToolButton::clicked, this, [=]() {
+    emit editTask();
+  });
+
+  QObject::connect(ui.runTask, &QToolButton::clicked, this, [=]() {
+//!!!
+
+
+    QDateTime nowDateTime = QDateTime::currentDateTime();
+
+    mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm t");
+    mRequestId = QUuid::createUuid().toString();
+    emit save();
+    emit runTask();
+  });
+
   ui.showDetails->setStyleSheet(
       "QToolButton { border: 0; color: black; font-weight: bold;}");
   ui.showDetails->setText("  Paused");
@@ -407,6 +465,30 @@ void SchedulerWidget::cancel() {
   }
 }
 */
+
+void SchedulerWidget::applyScreenToSettings() {
+  //!!!
+  mSchedulerName = ui.schedulerName->text();
+
+  mDailyState = ui.dailyState->isChecked();
+
+  mDailyMon = ui.cb_mon->isChecked();
+  mDailyTue = ui.cb_tue->isChecked();
+  mDailyWed = ui.cb_wed->isChecked();
+  mDailyThu = ui.cb_thu->isChecked();
+  mDailyFri = ui.cb_fri->isChecked();
+  mDailySat = ui.cb_sat->isChecked();
+  mDailySun = ui.cb_sun->isChecked();
+
+  mDailyHour = QString::number(ui.hours->value());
+  mDailyMinute = QString::number(ui.minutes->value());
+
+  mCronState = ui.cronState->isChecked();
+
+  mCron = ui.cron->text();
+
+  mExecutionMode = QString::number(ui.cb_executionMode->currentIndex());
+}
 
 void SchedulerWidget::applySettingsToScreen() {
 
@@ -443,7 +525,7 @@ void SchedulerWidget::applySettingsToScreen() {
   ui.dailyState->setChecked(mDailyState);
   ui.cb_mon->setChecked(mDailyMon);
   ui.cb_tue->setChecked(mDailyTue);
-  ui.cb_wed->setChecked(mDailyThu);
+  ui.cb_wed->setChecked(mDailyWed);
   ui.cb_thu->setChecked(mDailyThu);
   ui.cb_fri->setChecked(mDailyFri);
   ui.cb_sat->setChecked(mDailySat);
@@ -452,7 +534,10 @@ void SchedulerWidget::applySettingsToScreen() {
   if (mDailyMon && mDailyTue && mDailyWed && mDailyThu && mDailyFri &&
       mDailySat && mDailySun) {
     ui.everyday->setChecked(true);
+  } else {
+    ui.everyday->setChecked(false);
   }
+
   // QString mDailyHour = "00";
   ui.hours->setValue(mDailyHour.toInt());
   // QString mDailyMinute = "00";
@@ -586,7 +671,6 @@ void SchedulerWidget::applyArgsToScheduler(QStringList args) {
       mSchedulerStatus = argValue;
     }
   }
-
   return;
 }
 
@@ -597,6 +681,8 @@ void SchedulerWidget::updateTaskName(const QString newTaskName) {
 }
 
 QString SchedulerWidget::getSchedulerTaskId() { return mTaskId; }
+
+QString SchedulerWidget::getSchedulerRequestId() { return mRequestId; }
 
 QString SchedulerWidget::enhanceCron(QString cron) {
 

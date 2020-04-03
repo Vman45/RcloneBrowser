@@ -24,6 +24,7 @@ public:
   // return all scheduler parameters so we can store it
   QStringList getSchedulerParameters();
   QString getSchedulerTaskId();
+  QString getSchedulerRequestId();
   void updateTaskName(const QString newTaskName);
 
 public slots:
@@ -33,6 +34,8 @@ signals:
   //  void finished();
   void closed();
   void save();
+  void editTask();
+  void runTask();
 
 private:
   Ui::SchedulerWidget ui;
@@ -40,6 +43,7 @@ private:
 
   void applySettingsToScreen();
   void applyArgsToScheduler(QStringList args);
+  void applyScreenToSettings();
 
   QString enhanceCron(QString cron);
 

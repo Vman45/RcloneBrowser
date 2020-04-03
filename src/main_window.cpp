@@ -3947,6 +3947,49 @@ void MainWindow::addScheduler(const QString &taskId, const QString &taskName,
   QObject::connect(widget, &SchedulerWidget::save, this,
                    [=]() { saveSchedulerFile(); });
 
+  QObject::connect(widget, &SchedulerWidget::editTask, this, [=]() {
+    QString taskID = widget->getSchedulerTaskId();
+
+    for (int k = 0; k < ui.tasksListWidget->count(); k = k + 1) {
+      JobOptionsListWidgetItem *item =
+          static_cast<JobOptionsListWidgetItem *>(ui.tasksListWidget->item(k));
+      JobOptions *joTasks = item->GetData();
+
+      if (taskID == joTasks->uniqueId.toString()) {
+
+        bool isDownload = (joTasks->jobType == JobOptions::Download);
+        QString remoteType = (joTasks->remoteType);
+        QString remoteMode = (joTasks->remoteMode);
+
+        QString remote = isDownload ? joTasks->source : joTasks->dest;
+        QString path = isDownload ? joTasks->dest : joTasks->source;
+
+        TransferDialog td(isDownload, false, remote, path, joTasks->isFolder,
+                          remoteType, remoteMode, this, joTasks, true);
+        td.exec();
+        break;
+      }
+    }
+  });
+  
+  QObject::connect(widget, &SchedulerWidget::runTask, this, [=]() {
+    QString taskID = widget->getSchedulerTaskId();
+
+    for (int k = 0; k < ui.tasksListWidget->count(); k = k + 1) {
+      JobOptionsListWidgetItem *item =
+          static_cast<JobOptionsListWidgetItem *>(ui.tasksListWidget->item(k));
+      JobOptions *joTasks = item->GetData();
+
+      if (taskID == joTasks->uniqueId.toString()) {
+        runItem(item, "scheduler", widget->getSchedulerRequestId());
+        break;
+      }
+
+
+    }
+
+  });  
+
   ui.schedulers->insertWidget(0, widget);
   ui.schedulers->insertWidget(1, line);
 }
