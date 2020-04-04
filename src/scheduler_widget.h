@@ -25,7 +25,11 @@ public:
   QStringList getSchedulerParameters();
   QString getSchedulerTaskId();
   QString getSchedulerRequestId();
+  int getExecutionMode();
   void updateTaskName(const QString newTaskName);
+  void updateTaskStatus(const QString requestID, const QString taskStatus);
+  void stopScheduler();
+  void startScheduler();
 
 public slots:
   //  void cancel();
@@ -36,6 +40,7 @@ signals:
   void save();
   void editTask();
   void runTask();
+  void stopTask();
 
 private:
   Ui::SchedulerWidget ui;
@@ -46,6 +51,8 @@ private:
   void applyScreenToSettings();
 
   QString enhanceCron(QString cron);
+
+  QDateTime nextRun();
 
   // list of scheduler parameters to be persistent in file
   QString mSchedulerStatus = "paused";
@@ -74,5 +81,11 @@ private:
   bool mCronState = false;
   QString mCron = "30 6,18 * * MON-FRI"; // b64
 
-  QString mExecutionMode = "0"; // 1,2,3
+  QString mExecutionMode = "0"; // 0,1
+
+  bool mManualStart = false;
+  bool mTaskRunning = false;
+  QString mIconsColour;
+  bool mGlobalStop = false;
+  QString mNextRun = "";
 };

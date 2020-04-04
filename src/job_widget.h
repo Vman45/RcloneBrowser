@@ -23,7 +23,7 @@ public slots:
   QString getTransferMode();
 
 signals:
-  void finished(const QString &info);
+  void finished(const QString &info, const QString &jobFinalStatus);
   void closed();
 
 private:
@@ -39,4 +39,5 @@ private:
   QString mUniqueID = "";
   QString mTransferMode = "";
   QString mRequestId = "";
+  QString mJobFinalStatus = "";
 };

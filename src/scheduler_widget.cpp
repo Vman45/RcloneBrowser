@@ -25,13 +25,44 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
     applySettingsToScreen();
     //    ui.info->setEnabled(false);
     //    ui.nextRun->setEnabled(false);
+
+
+  if (mIconsColour == "white") {
+    ui.showDetails->setStyleSheet(
+        "QToolButton { border: 0; font-weight: bold;}");
+  } else {
+    ui.showDetails->setStyleSheet(
+        "QToolButton { border: 0; color: black; font-weight: bold;}");
+  }
+
+  ui.showDetails->setText("  Paused");
+
+
+
   } else {
 
-    applyArgsToScheduler(args);
+applyArgsToScheduler(args);
+
+if (mGlobalStop) {
+    mNextRun = "";
+} else {
+
+applySettingsToScreen();
+
+if (mSchedulerStatus == "activated") {
+    mNextRun = nextRun().toString("ddd, dd-MMM-yyyy HH:mm t");
+} else {
+
+mNextRun = "";
+}
+
+}
+
     applySettingsToScreen();
   }
 
   ui.saveSchedule->setEnabled(false);
+  ui.saveStatus->hide();
   ui.cancelScheduleEdit->setEnabled(false);
 
   /*
@@ -68,11 +99,11 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
     ui.output->setVisible(false);
   */
 
-  QString iconsColour = settings->value("Settings/iconsColour").toString();
+  QString mIconsColour = settings->value("Settings/iconsColour").toString();
 
   QString img_add = "";
 
-  if (iconsColour == "white") {
+  if (mIconsColour == "white") {
     img_add = "_inv";
   }
 
@@ -97,9 +128,13 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       QIcon(":media/images/qbutton_icons/run" + img_add + ".png"));
   ui.runTask->setIconSize(QSize(24, 24));
 
+  ui.stopTask->setIcon(
+      QIcon(":media/images/qbutton_icons/stop" + img_add + ".png"));
+  ui.stopTask->setIconSize(QSize(24, 24));
+
   ui.editTask->setIcon(
       QIcon(":media/images/qbutton_icons/edit" + img_add + ".png"));
-  ui.runTask->setIconSize(QSize(24, 24));
+  ui.editTask->setIconSize(QSize(24, 24));
 
   ui.cancel->setIcon(
       QIcon(":media/images/qbutton_icons/cancel" + img_add + ".png"));
@@ -113,7 +148,21 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       QIcon(":media/images/qbutton_icons/run" + img_add + ".png"));
   ui.start->setIconSize(QSize(24, 24));
 
-  ui.pause->setEnabled(false);
+  ui.saveStatus->hide();
+
+  QObject::connect(ui.start, &QPushButton::clicked, this, [=]() {
+    mSchedulerStatus = "activated";
+    mNextRun = nextRun().toString("ddd, dd-MMM-yyyy HH:mm t");
+    applySettingsToScreen();
+    emit save();
+  });
+
+  QObject::connect(ui.pause, &QPushButton::clicked, this, [=]() {
+    mSchedulerStatus = "paused";
+    mNextRun = "";
+    applySettingsToScreen();
+    emit save();
+  });
 
   QObject::connect(ui.validate, &QPushButton::clicked, this, [=]() {
     QString cronExp = enhanceCron(ui.cron->text().trimmed()) + " *";
@@ -196,6 +245,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
     if (ui.dailyState->isChecked()) {
       ui.cronState->setChecked(false);
       ui.saveSchedule->setEnabled(true);
+      ui.saveStatus->show();
       ui.cancelScheduleEdit->setEnabled(true);
     } else {
       ui.dailyState->setChecked(true);
@@ -206,6 +256,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
     if (ui.cronState->isChecked()) {
       ui.dailyState->setChecked(false);
       ui.saveSchedule->setEnabled(true);
+      ui.saveStatus->show();
       ui.cancelScheduleEdit->setEnabled(true);
     } else {
       ui.cronState->setChecked(true);
@@ -223,6 +274,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       ui.cb_sat->setChecked(true);
       ui.cb_sun->setChecked(true);
       ui.saveSchedule->setEnabled(true);
+      ui.saveStatus->show();
       ui.cancelScheduleEdit->setEnabled(true);
     } else {
 
@@ -246,6 +298,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       }
     }
     ui.saveSchedule->setEnabled(true);
+    ui.saveStatus->show();
     ui.cancelScheduleEdit->setEnabled(true);
   });
 
@@ -265,6 +318,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       }
     }
     ui.saveSchedule->setEnabled(true);
+    ui.saveStatus->show();
     ui.cancelScheduleEdit->setEnabled(true);
   });
 
@@ -284,6 +338,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       }
     }
     ui.saveSchedule->setEnabled(true);
+    ui.saveStatus->show();
     ui.cancelScheduleEdit->setEnabled(true);
   });
 
@@ -303,6 +358,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       }
     }
     ui.saveSchedule->setEnabled(true);
+    ui.saveStatus->show();
     ui.cancelScheduleEdit->setEnabled(true);
   });
 
@@ -322,6 +378,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       }
     }
     ui.saveSchedule->setEnabled(true);
+    ui.saveStatus->show();
     ui.cancelScheduleEdit->setEnabled(true);
   });
 
@@ -341,6 +398,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       }
     }
     ui.saveSchedule->setEnabled(true);
+    ui.saveStatus->show();
     ui.cancelScheduleEdit->setEnabled(true);
   });
 
@@ -360,40 +418,47 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       }
     }
     ui.saveSchedule->setEnabled(true);
+    ui.saveStatus->show();
     ui.cancelScheduleEdit->setEnabled(true);
   });
 
   QObject::connect(ui.cron, &QLineEdit::textChanged, this, [=]() {
     ui.saveSchedule->setEnabled(true);
+    ui.saveStatus->show();
     ui.cancelScheduleEdit->setEnabled(true);
   });
 
   QObject::connect(ui.schedulerName, &QLineEdit::textChanged, this, [=]() {
     ui.saveSchedule->setEnabled(true);
+    ui.saveStatus->show();
     ui.cancelScheduleEdit->setEnabled(true);
   });
 
   QObject::connect(ui.hours, QOverload<int>::of(&HoursSpinBox::valueChanged),
                    [=]() {
                      ui.saveSchedule->setEnabled(true);
+                     ui.saveStatus->show();
                      ui.cancelScheduleEdit->setEnabled(true);
                    });
 
   QObject::connect(ui.minutes,
                    QOverload<int>::of(&MinutesSpinBox::valueChanged), [=]() {
                      ui.saveSchedule->setEnabled(true);
+                     ui.saveStatus->show();
                      ui.cancelScheduleEdit->setEnabled(true);
                    });
 
   QObject::connect(ui.cb_executionMode, &QComboBox::currentTextChanged, this,
                    [=]() {
                      ui.saveSchedule->setEnabled(true);
+                     ui.saveStatus->show();
                      ui.cancelScheduleEdit->setEnabled(true);
                    });
 
   QObject::connect(ui.cancelScheduleEdit, &QPushButton::clicked, this, [=]() {
     applySettingsToScreen();
     ui.saveSchedule->setEnabled(false);
+    ui.saveStatus->hide();
     ui.cancelScheduleEdit->setEnabled(false);
   });
 
@@ -431,29 +496,29 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
     emit save();
     applySettingsToScreen();
     ui.saveSchedule->setEnabled(false);
+    ui.saveStatus->hide();
     ui.cancelScheduleEdit->setEnabled(false);
     // start new schedule
   });
 
-  QObject::connect(ui.editTask, &QToolButton::clicked, this, [=]() {
-    emit editTask();
-  });
+  QObject::connect(ui.editTask, &QToolButton::clicked, this,
+                   [=]() { emit editTask(); });
+
+  QObject::connect(ui.stopTask, &QToolButton::clicked, this,
+                   [=]() { emit stopTask(); });
 
   QObject::connect(ui.runTask, &QToolButton::clicked, this, [=]() {
-//!!!
+    //!!!
 
+    //    QDateTime nowDateTime = QDateTime::currentDateTime();
 
-    QDateTime nowDateTime = QDateTime::currentDateTime();
-
-    mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm t");
+    //    mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm t");
     mRequestId = QUuid::createUuid().toString();
-    emit save();
+    //    emit save();
+    mManualStart = true;
     emit runTask();
   });
 
-  ui.showDetails->setStyleSheet(
-      "QToolButton { border: 0; color: black; font-weight: bold;}");
-  ui.showDetails->setText("  Paused");
 }
 
 SchedulerWidget::~SchedulerWidget() {}
@@ -492,7 +557,69 @@ void SchedulerWidget::applyScreenToSettings() {
 
 void SchedulerWidget::applySettingsToScreen() {
 
-  // mSchedulerStatus
+qDebug() << "mGlobalStop: " << mGlobalStop;
+qDebug() << "mSchedulerStatus: " << mSchedulerStatus;
+
+
+
+ui.nextRun->setText(mNextRun);
+
+qDebug() << "mNextRun: " << mNextRun;
+
+  if (mGlobalStop) {
+
+    if (mIconsColour == "white") {
+      ui.showDetails->setStyleSheet(
+          "QToolButton { border: 0; font-weight: bold;}");
+    } else {
+      ui.showDetails->setStyleSheet(
+          "QToolButton { border: 0; color: black; font-weight: bold;}");
+    }
+
+    ui.showDetails->setText("  Stopped");
+
+    if (mSchedulerStatus == "paused") {
+
+      ui.start->setEnabled(true);
+      ui.pause->setEnabled(false);
+    }
+
+    if (mSchedulerStatus == "activated") {
+
+      ui.start->setEnabled(false);
+      ui.pause->setEnabled(true);
+    }
+
+  } else {
+
+    if (mSchedulerStatus == "paused") {
+
+      if (mIconsColour == "white") {
+        ui.showDetails->setStyleSheet(
+            "QToolButton { border: 0; font-weight: bold;}");
+      } else {
+        ui.showDetails->setStyleSheet(
+            "QToolButton { border: 0; color: black; font-weight: bold;}");
+      }
+
+      ui.showDetails->setText("  Paused");
+
+      ui.start->setEnabled(true);
+      ui.pause->setEnabled(false);
+
+    }
+
+    if (mSchedulerStatus == "activated") {
+
+      ui.showDetails->setStyleSheet(
+          "QToolButton { border: 0; color: darkgreen; font-weight: bold;}");
+
+      ui.showDetails->setText("  Active");
+
+      ui.start->setEnabled(false);
+      ui.pause->setEnabled(true);
+    }
+  }
 
   //  QString mTaskId;
   //  QString mTaskName; //b64
@@ -511,6 +638,28 @@ void SchedulerWidget::applySettingsToScreen() {
   //  QString mRequestId;
   //  QString mLastRunFinished; //b64
   ui.lastRunFinished->setText(mLastRunFinished);
+
+  if (mLastRunStatus == "running" || mLastRunStatus == "in the queue") {
+    ui.lastRunStatus->setStyleSheet(
+        "QLabel { color: green; font-weight: bold;}");
+    ui.runTask->setEnabled(false);
+    ui.stopTask->setEnabled(true);
+  }
+
+  if (mLastRunStatus == "finished") {
+    ui.lastRunStatus->setStyleSheet(
+        "QLabel { color: green; font-weight: bold;}");
+    ui.runTask->setEnabled(true);
+    ui.stopTask->setEnabled(false);
+  }
+
+  if (mLastRunStatus == "removed from the queue" ||
+      mLastRunStatus == "stopped" || mLastRunStatus == "error") {
+    ui.lastRunStatus->setStyleSheet("QLabel { color: red; font-weight: bold;}");
+    ui.runTask->setEnabled(true);
+    ui.stopTask->setEnabled(false);
+  }
+
   //  QString mLastRunStatus; //b64
   ui.lastRunStatus->setText(mLastRunStatus);
 
@@ -551,6 +700,20 @@ void SchedulerWidget::applySettingsToScreen() {
 
   //  QString executionMode = "1"; //1,2,3
   ui.cb_executionMode->setCurrentIndex(mExecutionMode.toInt());
+
+  if (mGlobalStop) {
+    ui.runTask->setEnabled(false);
+    ui.stopTask->setEnabled(false);
+  } else {
+
+    if (mLastRunStatus == "running" || mLastRunStatus == "in the queue") {
+      ui.runTask->setEnabled(false);
+      ui.stopTask->setEnabled(true);
+    } else {
+      ui.runTask->setEnabled(true);
+      ui.stopTask->setEnabled(false);
+    }
+  }
 }
 
 QStringList SchedulerWidget::getSchedulerParameters() {
@@ -565,6 +728,7 @@ QStringList SchedulerWidget::getSchedulerParameters() {
   schedulerArgs << "mRequestId" << mRequestId;
   schedulerArgs << "mLastRunFinished" << mLastRunFinished.toUtf8().toBase64();
   schedulerArgs << "mLastRunStatus" << mLastRunStatus.toUtf8().toBase64();
+  schedulerArgs << "mSchedulerStatus" << mSchedulerStatus;
 
   schedulerArgs << "mDailyState" << QVariant(mDailyState).toString();
   schedulerArgs << "mDailyMon" << QVariant(mDailyMon).toString();
@@ -580,8 +744,6 @@ QStringList SchedulerWidget::getSchedulerParameters() {
   schedulerArgs << "mCronState" << QVariant(mCronState).toString();
   schedulerArgs << "mCron" << mCron.toUtf8().toBase64();
   schedulerArgs << "mExecutionMode" << mExecutionMode;
-
-  schedulerArgs << "mSchedulerStatus" << mSchedulerStatus;
 
   return schedulerArgs;
 }
@@ -621,6 +783,11 @@ void SchedulerWidget::applyArgsToScheduler(QStringList args) {
     }
     if (arg == "mLastRunStatus") {
       mLastRunStatus = (QString)QByteArray::fromBase64(argValue.toUtf8());
+    }
+
+    if (arg == "mSchedulerStatus") {
+      mSchedulerStatus = argValue;
+      qDebug() << "mSchedulerStatus: " << mSchedulerStatus;
     }
 
     if (arg == "mDailyState") {
@@ -666,10 +833,6 @@ void SchedulerWidget::applyArgsToScheduler(QStringList args) {
     if (arg == "mExecutionMode") {
       mExecutionMode = argValue;
     }
-
-    if (arg == "mSchedulerStatus") {
-      mSchedulerStatus = argValue;
-    }
   }
   return;
 }
@@ -680,9 +843,40 @@ void SchedulerWidget::updateTaskName(const QString newTaskName) {
   ui.taskName->setText(mTaskName);
 }
 
+void SchedulerWidget::stopScheduler() {
+
+  if (mIconsColour == "white") {
+    ui.showDetails->setStyleSheet(
+        "QToolButton { border: 0; font-weight: bold;}");
+  } else {
+    ui.showDetails->setStyleSheet(
+        "QToolButton { border: 0; color: black; font-weight: bold;}");
+  }
+
+  ui.showDetails->setText("  Stopped");
+
+  emit stopTask();
+
+  ui.runTask->setEnabled(false);
+  ui.stopTask->setEnabled(false);
+
+  mGlobalStop = true;
+
+  ui.nextRun->setText("");
+}
+
+void SchedulerWidget::startScheduler() {
+
+  mGlobalStop = false;
+  applySettingsToScreen();
+  // restart !!!
+}
+
 QString SchedulerWidget::getSchedulerTaskId() { return mTaskId; }
 
 QString SchedulerWidget::getSchedulerRequestId() { return mRequestId; }
+
+int SchedulerWidget::getExecutionMode() { return mExecutionMode.toInt(); }
 
 QString SchedulerWidget::enhanceCron(QString cron) {
 
@@ -710,4 +904,89 @@ QString SchedulerWidget::enhanceCron(QString cron) {
   enhancedCron.replace("DEC", "12");
 
   return enhancedCron;
+}
+
+void SchedulerWidget::updateTaskStatus(const QString requestID,
+                                       const QString taskStatus) {
+
+  if (requestID == mRequestId) {
+
+    if (taskStatus == "already running") {
+      if (mManualStart) {
+        QMessageBox::warning(
+            this, "Warning",
+            QString("This task can't be started.\nIt is already running."),
+            QMessageBox::Ok);
+        mManualStart = false;
+      }
+    }
+
+    if (taskStatus == "running") {
+      QDateTime nowDateTime = QDateTime::currentDateTime();
+      mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+      mLastRunFinished = "";
+      mLastRunStatus = "running";
+      mTaskRunning = true;
+    }
+
+    if (taskStatus == "in the queue") {
+      QDateTime nowDateTime = QDateTime::currentDateTime();
+      mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+      mLastRunFinished = "";
+      mLastRunStatus = "in the queue";
+      mTaskRunning = true;
+    }
+
+    if (taskStatus == "removed from the queue") {
+      QDateTime nowDateTime = QDateTime::currentDateTime();
+      mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+      mLastRunStatus = "removed from the queue";
+      mTaskRunning = false;
+    }
+
+    if (taskStatus == "finished") {
+      QDateTime nowDateTime = QDateTime::currentDateTime();
+      mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+      mLastRunStatus = "finished";
+      mTaskRunning = false;
+    }
+
+    if (taskStatus == "stopped") {
+      QDateTime nowDateTime = QDateTime::currentDateTime();
+      mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+      mLastRunStatus = "stopped";
+      mTaskRunning = false;
+    }
+
+    if (taskStatus == "error") {
+      QDateTime nowDateTime = QDateTime::currentDateTime();
+      mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+      mLastRunStatus = "error";
+      mTaskRunning = false;
+    }
+
+    applySettingsToScreen();
+    emit save();
+  }
+}
+
+
+QDateTime SchedulerWidget::nextRun() {
+
+
+if (mCronState) {
+
+QString cronExp = enhanceCron(ui.cron->text().trimmed()) + " *";
+QDateTime nowDateTime = QDateTime::currentDateTime();
+QCron cron(cronExp);
+
+return (cron.next(nowDateTime));
+
+}
+
+
+return (QDateTime::fromString ("Fri, 07-Jan-2022 17:00:00 GMT Summer Time", "ddd, dd-MMM-yyyy HH:mm:ss t"));
+
+
+
 }

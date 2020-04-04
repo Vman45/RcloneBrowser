@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>858</width>
-    <height>484</height>
+    <width>860</width>
+    <height>487</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,6 +48,16 @@
         </property>
         <property name="arrowType">
          <enum>Qt::NoArrow</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="saveStatus">
+        <property name="styleSheet">
+         <string notr="true"> QLabel { border: 0; color: red; font-weight: bold;}</string>
+        </property>
+        <property name="text">
+         <string>!!! Edited - not saved !!!</string>
         </property>
        </widget>
       </item>
@@ -116,6 +126,9 @@
         <property name="text">
          <string/>
         </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+        </property>
        </widget>
       </item>
       <item>
@@ -136,6 +149,12 @@
       </item>
       <item>
        <widget class="QToolButton" name="start">
+        <property name="toolTip">
+         <string>Activate scheduler</string>
+        </property>
+        <property name="statusTip">
+         <string>Activate scheduler</string>
+        </property>
         <property name="styleSheet">
          <string notr="true">QToolButton { border: 0; }
 
@@ -154,10 +173,10 @@ QToolButton:pressed {
       <item>
        <widget class="QToolButton" name="pause">
         <property name="toolTip">
-         <string>Copy rclone command to clipboard</string>
+         <string>Pause scheduler</string>
         </property>
         <property name="statusTip">
-         <string>Copy rclone command to clipboard</string>
+         <string>Pause scheduler</string>
         </property>
         <property name="styleSheet">
          <string notr="true">QToolButton { border: 0; }
@@ -203,29 +222,13 @@ QToolButton:pressed {
    <item>
     <widget class="QWidget" name="details" native="true">
      <layout class="QGridLayout" name="gridLayout">
-      <item row="1" column="0">
-       <spacer name="horizontalSpacer_5">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::Fixed</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
       <item row="4" column="4">
        <widget class="QTabWidget" name="tabWidget">
         <property name="tabPosition">
          <enum>QTabWidget::North</enum>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
@@ -538,16 +541,6 @@ QToolButton:pressed {
         </widget>
        </widget>
       </item>
-      <item row="3" column="4">
-       <widget class="QLineEdit" name="schedulerName">
-        <property name="text">
-         <string>Scheduled task: Copy from Google</string>
-        </property>
-        <property name="maxLength">
-         <number>100</number>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="4">
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
@@ -568,12 +561,135 @@ QToolButton:pressed {
         </item>
         <item>
          <widget class="QLabel" name="taskName">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Copy from Google</string>
           </property>
+          <property name="textInteractionFlags">
+           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+          </property>
          </widget>
         </item>
+        <item>
+         <spacer name="horizontalSpacer_12">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QToolButton" name="runTask">
+          <property name="toolTip">
+           <string>Run task now</string>
+          </property>
+          <property name="statusTip">
+           <string>Run task now</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QToolButton { border: 0; }
+
+QToolButton:pressed {
+ border: 4;
+ border-radius: 10px;
+ border-style: inset;
+ border-color: rgba(1, 1, 1, 0);
+}</string>
+          </property>
+          <property name="text">
+           <string>Run</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="stopTask">
+          <property name="toolTip">
+           <string>Stop task</string>
+          </property>
+          <property name="statusTip">
+           <string>Stop task</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QToolButton { border: 0; }
+
+QToolButton:pressed {
+ border: 4;
+ border-radius: 10px;
+ border-style: inset;
+ border-color: rgba(1, 1, 1, 0);
+}</string>
+          </property>
+          <property name="text">
+           <string>Stop</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="editTask">
+          <property name="toolTip">
+           <string>Edit task</string>
+          </property>
+          <property name="statusTip">
+           <string>Edit task</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QToolButton { border: 0; }
+
+QToolButton:pressed {
+ border: 4;
+ border-radius: 10px;
+ border-style: inset;
+ border-color: rgba(1, 1, 1, 0);
+}</string>
+          </property>
+          <property name="text">
+           <string>E</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_11">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
        </layout>
+      </item>
+      <item row="1" column="0">
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
       <item row="5" column="4">
        <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -599,11 +715,6 @@ QToolButton:pressed {
              <item>
               <property name="text">
                <string>Add to the queue</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Run if no other task running, otherwise add to the queue</string>
               </property>
              </item>
             </widget>
@@ -682,6 +793,9 @@ QToolButton:pressed {
           <property name="text">
            <string>Mon, 12 JAN 2020 14:45 GMT </string>
           </property>
+          <property name="textInteractionFlags">
+           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+          </property>
          </widget>
         </item>
         <item>
@@ -720,6 +834,9 @@ QToolButton:pressed {
           </property>
           <property name="text">
            <string>Mon, 12 MAY 2020 14:45 BST</string>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
           </property>
          </widget>
         </item>
@@ -760,6 +877,9 @@ QToolButton:pressed {
           <property name="text">
            <string>OK</string>
           </property>
+          <property name="textInteractionFlags">
+           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+          </property>
          </widget>
         </item>
         <item>
@@ -777,49 +897,13 @@ QToolButton:pressed {
         </item>
        </layout>
       </item>
-      <item row="1" column="3">
-       <widget class="QToolButton" name="runTask">
-        <property name="toolTip">
-         <string>Run task now</string>
-        </property>
-        <property name="statusTip">
-         <string>Run task now</string>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">QToolButton { border: 0; }
-
-QToolButton:pressed {
- border: 4;
- border-radius: 10px;
- border-style: inset;
- border-color: rgba(1, 1, 1, 0);
-}</string>
-        </property>
+      <item row="3" column="4">
+       <widget class="QLineEdit" name="schedulerName">
         <property name="text">
-         <string>Run</string>
+         <string>Scheduled task: Copy from Google</string>
         </property>
-       </widget>
-      </item>
-      <item row="1" column="1" alignment="Qt::AlignRight">
-       <widget class="QToolButton" name="editTask">
-        <property name="toolTip">
-         <string>Edit task</string>
-        </property>
-        <property name="statusTip">
-         <string>Edit task</string>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">QToolButton { border: 0; }
-
-QToolButton:pressed {
- border: 4;
- border-radius: 10px;
- border-style: inset;
- border-color: rgba(1, 1, 1, 0);
-}</string>
-        </property>
-        <property name="text">
-         <string>E</string>
+        <property name="maxLength">
+         <number>100</number>
         </property>
        </widget>
       </item>
