@@ -25,6 +25,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
     mNextRun = nextRun();
 
     applySettingsToScreen();
+    updateInfoFields();
 
     if (mIconsColour == "white") {
       ui.showDetails->setStyleSheet(
@@ -41,6 +42,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
     applyArgsToScheduler(args);
     mNextRun = nextRun();
     applySettingsToScreen();
+    updateInfoFields();
   }
 
   ui.saveSchedule->setEnabled(false);
@@ -134,22 +136,16 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
 
   QTimer::singleShot(5000, this, SLOT(checkSchedule()));
 
-  // checkSchedule();
-
-  //  QTimer *timer = new QTimer(this);
-  //  connect(timer, SIGNAL(timeout()), this, SLOT(checkSchedule()));
-  //  timer->start(3000);
-
   QObject::connect(ui.start, &QPushButton::clicked, this, [=]() {
     mSchedulerStatus = "activated";
     mNextRun = nextRun();
-    applySettingsToScreen();
+    updateInfoFields();
     emit save();
   });
 
   QObject::connect(ui.pause, &QPushButton::clicked, this, [=]() {
     mSchedulerStatus = "paused";
-    applySettingsToScreen();
+    updateInfoFields();
     emit save();
   });
 
@@ -189,13 +185,9 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
       msgBox.setIcon(QMessageBox::Information);
       msgBox.setStandardButtons(QMessageBox::Ok);
       msgBox.setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-      // msgBox.setStyleSheet("QLabel{min-width: 200px;}");
-      // msgBox.setBaseSize(QSize(600, 120));
       msgBox.exec();
     }
   });
-
-  //  QObject::connect(ui.cancel, &QToolButton::clicked, this, [=]() {});
 
   QObject::connect(
       ui.showDetails, &QToolButton::toggled, this, [=](bool checked) {
@@ -446,6 +438,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
 
   QObject::connect(ui.cancelScheduleEdit, &QPushButton::clicked, this, [=]() {
     applySettingsToScreen();
+    updateInfoFields();
     ui.saveSchedule->setEnabled(false);
     ui.saveStatus->hide();
     ui.cancelScheduleEdit->setEnabled(false);
@@ -482,9 +475,11 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
 
     // save task
     applyScreenToSettings();
+    updateInfoFields();
     mNextRun = nextRun();
     emit save();
     applySettingsToScreen();
+    updateInfoFields();
     ui.saveSchedule->setEnabled(false);
     ui.saveStatus->hide();
     ui.cancelScheduleEdit->setEnabled(false);
@@ -498,13 +493,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
                    [=]() { emit stopTask(); });
 
   QObject::connect(ui.runTask, &QToolButton::clicked, this, [=]() {
-    //!!!
-
-    //    QDateTime nowDateTime = QDateTime::currentDateTime();
-
-    //    mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm t");
     mRequestId = QUuid::createUuid().toString();
-    //    emit save();
     mManualStart = true;
     emit runTask();
   });
@@ -517,18 +506,10 @@ void SchedulerWidget::checkSchedule(void) {
   QDateTime nowDateTime = QDateTime::currentDateTime();
   qint64 diff = mNextRun.secsTo(nowDateTime);
 
-  qDebug() << "nowDateTime: " << nowDateTime;
-  qDebug() << "diff: " << diff;
-  qDebug() << "mGlobalStop: " << mGlobalStop;
-  qDebug() << "mSchedulerStatus: " << mSchedulerStatus;
-  qDebug() << "mTaskRunning: " << mTaskRunning;
-
   if (diff >= 0 && diff < 60) {
 
     mNextRun = nextRun();
-    applySettingsToScreen();
-
-  qDebug() << "mNextRun: " << mNextRun;
+    updateInfoFields();
 
     if (!mGlobalStop && (mSchedulerStatus == "activated") && !mTaskRunning) {
       mRequestId = QUuid::createUuid().toString();
@@ -540,7 +521,7 @@ void SchedulerWidget::checkSchedule(void) {
   // reschedule if missed becasue e.g. sleep/hibernation
   if (diff > 70) {
     mNextRun = nextRun();
-    applySettingsToScreen();
+    updateInfoFields();
   }
 
   // set next check at full minute
@@ -552,28 +533,16 @@ void SchedulerWidget::checkSchedule(void) {
 
   diff = QDateTime::currentDateTime().msecsTo(dt_start);
 
-  qDebug() << "diff1: " << diff;
-
   if (diff < 0) {
-    diff = 0;
+    diff = 1000;
   };
 
-  QTimer::singleShot(diff, this, SLOT(checkSchedule()));
+  QTimer::singleShot(diff + 1000, this, SLOT(checkSchedule()));
 
-  qDebug() << "return: ";
   return;
 }
 
-/*
-void SchedulerWidget::cancel() {
-  if (!isRunning) {
-    return;
-  }
-}
-*/
-
 void SchedulerWidget::applyScreenToSettings() {
-  //!!!
   mSchedulerName = ui.schedulerName->text();
 
   mDailyState = ui.dailyState->isChecked();
@@ -598,79 +567,7 @@ void SchedulerWidget::applyScreenToSettings() {
 
 void SchedulerWidget::applySettingsToScreen() {
 
-  qDebug() << "mGlobalStop: " << mGlobalStop;
-  qDebug() << "mSchedulerStatus: " << mSchedulerStatus;
-
-  if (!mGlobalStop) {
-
-    if (mSchedulerStatus == "activated") {
-      ui.nextRun->setText(mNextRun.toString("ddd, dd-MMM-yyyy HH:mm t"));
-      ui.nextRun->setEnabled(true);
-    }
-
-    if (mSchedulerStatus == "paused") {
-      ui.nextRun->setText(mNextRun.toString("ddd, dd-MMM-yyyy HH:mm t"));
-      ui.nextRun->setEnabled(false);
-    }
-
-  } else {
-    ui.nextRun->setText(mNextRun.toString("ddd, dd-MMM-yyyy HH:mm t"));
-    ui.nextRun->setEnabled(false);
-  }
-
-  if (mGlobalStop) {
-
-    if (mIconsColour == "white") {
-      ui.showDetails->setStyleSheet(
-          "QToolButton { border: 0; font-weight: bold;}");
-    } else {
-      ui.showDetails->setStyleSheet(
-          "QToolButton { border: 0; color: black; font-weight: bold;}");
-    }
-
-    ui.showDetails->setText("  Stopped");
-
-    if (mSchedulerStatus == "paused") {
-
-      ui.start->setEnabled(true);
-      ui.pause->setEnabled(false);
-    }
-
-    if (mSchedulerStatus == "activated") {
-
-      ui.start->setEnabled(false);
-      ui.pause->setEnabled(true);
-    }
-
-  } else {
-
-    if (mSchedulerStatus == "paused") {
-
-      if (mIconsColour == "white") {
-        ui.showDetails->setStyleSheet(
-            "QToolButton { border: 0; font-weight: bold;}");
-      } else {
-        ui.showDetails->setStyleSheet(
-            "QToolButton { border: 0; color: black; font-weight: bold;}");
-      }
-
-      ui.showDetails->setText("  Paused");
-
-      ui.start->setEnabled(true);
-      ui.pause->setEnabled(false);
-    }
-
-    if (mSchedulerStatus == "activated") {
-
-      ui.showDetails->setStyleSheet(
-          "QToolButton { border: 0; color: darkgreen; font-weight: bold;}");
-
-      ui.showDetails->setText("  Active");
-
-      ui.start->setEnabled(false);
-      ui.pause->setEnabled(true);
-    }
-  }
+  // use with updateInfoFields() to update all fields
 
   //  QString mTaskId;
   //  QString mTaskName; //b64
@@ -682,34 +579,6 @@ void SchedulerWidget::applySettingsToScreen() {
   ui.info->setText(mSchedulerName);
 
   //  QString mSchedulerId = QUuid::createUuid().toString();
-
-  //  QString mLastRun; //b64
-  ui.lastRun->setText(mLastRun);
-
-  //  QString mRequestId;
-  //  QString mLastRunFinished; //b64
-  ui.lastRunFinished->setText(mLastRunFinished);
-
-  if (mLastRunStatus == "running" || mLastRunStatus == "in the queue") {
-    ui.lastRunStatus->setStyleSheet(
-        "QLabel { color: darkgreen; font-weight: bold;}");
-    ui.runTask->setEnabled(false);
-    ui.stopTask->setEnabled(true);
-  }
-
-  if (mLastRunStatus == "finished") {
-    ui.lastRunStatus->setStyleSheet(
-        "QLabel { color: darkgreen; font-weight: bold;}");
-    ui.runTask->setEnabled(true);
-    ui.stopTask->setEnabled(false);
-  }
-
-  if (mLastRunStatus == "removed from the queue" ||
-      mLastRunStatus == "stopped" || mLastRunStatus == "error") {
-    ui.lastRunStatus->setStyleSheet("QLabel { color: red; font-weight: bold;}");
-    ui.runTask->setEnabled(true);
-    ui.stopTask->setEnabled(false);
-  }
 
   //  QString mLastRunStatus; //b64
   ui.lastRunStatus->setText(mLastRunStatus);
@@ -838,7 +707,6 @@ void SchedulerWidget::applyArgsToScheduler(QStringList args) {
 
     if (arg == "mSchedulerStatus") {
       mSchedulerStatus = argValue;
-      qDebug() << "mSchedulerStatus: " << mSchedulerStatus;
     }
 
     if (arg == "mDailyState") {
@@ -921,6 +789,7 @@ void SchedulerWidget::startScheduler() {
   mGlobalStop = false;
   ui.nextRun->setEnabled(true);
   applySettingsToScreen();
+  updateInfoFields();
   // restart !!!
 }
 
@@ -1029,7 +898,7 @@ void SchedulerWidget::updateTaskStatus(const QString requestID,
                              "background-color: rgba(0, 0, 0, 0);}");
     }
 
-    applySettingsToScreen();
+    updateInfoFields();
     emit save();
   }
 }
@@ -1108,3 +977,111 @@ QDateTime SchedulerWidget::nextRun() {
   return (QDateTime::fromString("Fri, 01-Jan-2100 17:00:00 GMT",
                                 "ddd, dd-MMM-yyyy HH:mm:ss t"));
 }
+
+
+void SchedulerWidget::updateInfoFields (void) {
+
+  if (!mGlobalStop) {
+
+    if (mSchedulerStatus == "activated") {
+      ui.nextRun->setText(mNextRun.toString("ddd, dd-MMM-yyyy HH:mm t"));
+      ui.nextRun->setEnabled(true);
+    }
+
+    if (mSchedulerStatus == "paused") {
+      ui.nextRun->setText(mNextRun.toString("ddd, dd-MMM-yyyy HH:mm t"));
+      ui.nextRun->setEnabled(false);
+    }
+
+  } else {
+    ui.nextRun->setText(mNextRun.toString("ddd, dd-MMM-yyyy HH:mm t"));
+    ui.nextRun->setEnabled(false);
+  }
+
+
+  if (mGlobalStop) {
+
+    if (mIconsColour == "white") {
+      ui.showDetails->setStyleSheet(
+          "QToolButton { border: 0; font-weight: bold;}");
+    } else {
+      ui.showDetails->setStyleSheet(
+          "QToolButton { border: 0; color: black; font-weight: bold;}");
+    }
+
+    ui.showDetails->setText("  Stopped");
+
+    if (mSchedulerStatus == "paused") {
+
+      ui.start->setEnabled(true);
+      ui.pause->setEnabled(false);
+    }
+
+    if (mSchedulerStatus == "activated") {
+
+      ui.start->setEnabled(false);
+      ui.pause->setEnabled(true);
+    }
+
+  } else {
+   if (mSchedulerStatus == "paused") {
+
+      if (mIconsColour == "white") {
+        ui.showDetails->setStyleSheet(
+            "QToolButton { border: 0; font-weight: bold;}");
+      } else {
+        ui.showDetails->setStyleSheet(
+            "QToolButton { border: 0; color: black; font-weight: bold;}");
+      }
+
+      ui.showDetails->setText("  Paused");
+
+      ui.start->setEnabled(true);
+      ui.pause->setEnabled(false);
+    }
+
+    if (mSchedulerStatus == "activated") {
+
+      ui.showDetails->setStyleSheet(
+          "QToolButton { border: 0; color: darkgreen; font-weight: bold;}");
+
+      ui.showDetails->setText("  Active");
+
+      ui.start->setEnabled(false);
+      ui.pause->setEnabled(true);
+    }
+  }
+
+  //  QString mLastRun; //b64
+  ui.lastRun->setText(mLastRun);
+
+  //  QString mRequestId;
+  //  QString mLastRunFinished; //b64
+  ui.lastRunFinished->setText(mLastRunFinished);
+
+  if (mLastRunStatus == "running" || mLastRunStatus == "in the queue") {
+    ui.lastRunStatus->setStyleSheet(
+        "QLabel { color: darkgreen; font-weight: bold;}");
+    ui.runTask->setEnabled(false);
+    ui.stopTask->setEnabled(true);
+  }
+
+  if (mLastRunStatus == "finished") {
+    ui.lastRunStatus->setStyleSheet(
+        "QLabel { color: darkgreen; font-weight: bold;}");
+    ui.runTask->setEnabled(true);
+    ui.stopTask->setEnabled(false);
+  }
+
+  if (mLastRunStatus == "removed from the queue" ||
+      mLastRunStatus == "stopped" || mLastRunStatus == "error") {
+    ui.lastRunStatus->setStyleSheet("QLabel { color: red; font-weight: bold;}");
+    ui.runTask->setEnabled(true);
+    ui.stopTask->setEnabled(false);
+  }
+
+  ui.lastRunStatus->setText(mLastRunStatus);
+
+}
+
+

@@ -49,6 +49,7 @@ private:
   void applySettingsToScreen();
   void applyArgsToScheduler(QStringList args);
   void applyScreenToSettings();
+  void updateInfoFields();
 
   QString enhanceCron(QString cron);
 
