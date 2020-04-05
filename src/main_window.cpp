@@ -4417,6 +4417,7 @@ void MainWindow::addScheduler(const QString &taskId, const QString &taskName,
     QString requestID = widget->getSchedulerRequestId();
     int executionMode = widget->getExecutionMode();
 
+    // find task based on taskID
     for (int k = 0; k < ui.tasksListWidget->count(); k = k + 1) {
       JobOptionsListWidgetItem *item =
           static_cast<JobOptionsListWidgetItem *>(ui.tasksListWidget->item(k));

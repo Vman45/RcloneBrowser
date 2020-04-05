@@ -55,7 +55,7 @@ private:
   QDateTime nextRun();
 
   // list of scheduler parameters to be persistent in file
-  QString mSchedulerStatus = "paused";
+  QString mSchedulerStatus = "paused"; // activated, paused
 
   QString mTaskId = "";
   QString mTaskName = "";      // b64
@@ -87,5 +87,9 @@ private:
   bool mTaskRunning = false;
   QString mIconsColour;
   bool mGlobalStop = false;
-  QString mNextRun = "";
+  QDateTime mNextRun;
+
+private slots:
+
+  void checkSchedule(void);
 };
