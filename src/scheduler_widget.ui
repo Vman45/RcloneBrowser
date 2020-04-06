@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>860</width>
-    <height>487</height>
+    <height>502</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -79,7 +79,7 @@
          <string notr="true">* { background-color: rgba(0, 0, 0, 0); }</string>
         </property>
         <property name="text">
-         <string>Scheduled task: Copy from Google</string>
+         <string>Scheduled task - Copy from Google</string>
         </property>
         <property name="frame">
          <bool>false</bool>
@@ -511,7 +511,7 @@ QToolButton:pressed {
              <item>
               <widget class="QLabel" name="cronExplanation">
                <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Supports: (0-59), (0-23), (1-31), (1-12 or JAN-DEC), ( 1-7 or MON-SUN) and special characters (* - / and ,).&lt;br/&gt;Try &lt;a href=&quot;https://crontab.guru/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0068da;&quot;&gt;crontab.guru&lt;/span&gt;&lt;/a&gt; for help. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p style=&quot;line-height:1.5&quot;&gt;Supports: (0-59), (0-23), (1-31), (1-12 or JAN-DEC), ( 1-7 or MON-SUN) and special characters (* - / and ,).&lt;br/&gt;Try &lt;a href=&quot;https://crontab.guru/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0068da;&quot;&gt;crontab.guru&lt;/span&gt;&lt;/a&gt; for help. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="indent">
                 <number>-1</number>

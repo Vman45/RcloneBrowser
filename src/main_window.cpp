@@ -1326,8 +1326,6 @@ MainWindow::MainWindow() {
           args << "NewScheduler";
           addScheduler(jo->uniqueId.toString(), jo->description, args);
 
-          qDebug() << "addScheduler: " << jo->description;
-
           if ((settings->value("Settings/schedulerStatus").toBool())) {
 
             ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
@@ -3525,8 +3523,6 @@ void MainWindow::listTasks() {
       }
     }
   }
-
-  qDebug() << "finishing listtasks";
 
   ui.queueListWidget->setFocus();
   setQueueButtons();

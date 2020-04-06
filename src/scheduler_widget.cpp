@@ -14,8 +14,8 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
 
   QString newInfo = "Scheduled task: " + taskName;
 
-  if (newInfo.length() > 140) {
-    mSchedulerName = newInfo.left(57) + "..." + newInfo.right(80);
+  if (newInfo.length() > 70) {
+    mSchedulerName = newInfo.left(35) + "..." + newInfo.right(32);
   } else {
     mSchedulerName = newInfo;
   }
@@ -218,6 +218,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
             .arg(mSchedulerName),
         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (button == QMessageBox::Yes) {
+      emit stopTask();
       emit closed();
     }
   });
