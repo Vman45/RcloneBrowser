@@ -40,6 +40,13 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
   } else {
 
     applyArgsToScheduler(args);
+
+    if (mLastRunStatus == "in the queue") {
+      mTaskRunning = true;
+      ui.info->setStyleSheet("QLineEdit { color: darkgreen; font-weight: bold; "
+                             "background-color: rgba(0, 0, 0, 0);}");
+    }
+
     mNextRun = nextRun();
     applySettingsToScreen();
     updateInfoFields();
@@ -134,6 +141,7 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
 
   ui.saveStatus->hide();
 
+  // start timer based scheduler
   QTimer::singleShot(5000, this, SLOT(checkSchedule()));
 
   QObject::connect(ui.start, &QPushButton::clicked, this, [=]() {
@@ -218,7 +226,10 @@ SchedulerWidget::SchedulerWidget(const QString &taskId, const QString &taskName,
             .arg(mSchedulerName),
         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (button == QMessageBox::Yes) {
-      emit stopTask();
+
+      if (mLastRunStatus == "in the queue" || mLastRunStatus == "running") {
+        emit stopTask();
+      }
       emit closed();
     }
   });
@@ -512,6 +523,10 @@ void SchedulerWidget::checkSchedule(void) {
     mNextRun = nextRun();
     updateInfoFields();
 
+    qDebug() << "mGlobalStop: " << mGlobalStop;
+    qDebug() << "mSchedulerStatus: " << mSchedulerStatus;
+    qDebug() << "mTaskRunning: " << mTaskRunning;
+
     if (!mGlobalStop && (mSchedulerStatus == "activated") && !mTaskRunning) {
       mRequestId = QUuid::createUuid().toString();
       mManualStart = false;
@@ -520,7 +535,7 @@ void SchedulerWidget::checkSchedule(void) {
   }
 
   // reschedule if missed becasue e.g. sleep/hibernation
-  if (diff > 70) {
+  if (diff > 60) {
     mNextRun = nextRun();
     updateInfoFields();
   }
@@ -535,7 +550,7 @@ void SchedulerWidget::checkSchedule(void) {
   diff = QDateTime::currentDateTime().msecsTo(dt_start);
 
   if (diff < 0) {
-    diff = 1000;
+    diff = 0;
   };
 
   QTimer::singleShot(diff + 1000, this, SLOT(checkSchedule()));
@@ -777,8 +792,9 @@ void SchedulerWidget::stopScheduler() {
 
   ui.showDetails->setText("  Stopped");
 
-  emit stopTask();
-
+  if (mLastRunStatus == "in the queue" || mLastRunStatus == "running") {
+    emit stopTask();
+  }
   ui.runTask->setEnabled(false);
   ui.stopTask->setEnabled(false);
 
@@ -831,7 +847,7 @@ QString SchedulerWidget::enhanceCron(QString cron) {
 void SchedulerWidget::updateTaskStatus(const QString requestID,
                                        const QString taskStatus) {
 
-  if (requestID == mRequestId) {
+if (requestID == mRequestId) {
 
     if (taskStatus == "already running") {
       if (mManualStart) {
@@ -840,68 +856,95 @@ void SchedulerWidget::updateTaskStatus(const QString requestID,
             QString("This task can't be started.\nIt is already running."),
             QMessageBox::Ok);
         mManualStart = false;
+        QDateTime nowDateTime = QDateTime::currentDateTime();
+        mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+        mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+        mLastRunStatus = "task already running";
+        ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
+                               "background-color: rgba(0, 0, 0, 0);}");
+
+      } else {
+
+        QDateTime nowDateTime = QDateTime::currentDateTime();
+        mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+        mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+        mLastRunStatus = "task already running";
+        mTaskRunning = false;
+        ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
+                               "background-color: rgba(0, 0, 0, 0);}");
       }
     }
 
-    if (taskStatus == "running") {
-      QDateTime nowDateTime = QDateTime::currentDateTime();
-      mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
-      mLastRunFinished = "";
-      mLastRunStatus = "running";
-      mTaskRunning = true;
-      ui.info->setStyleSheet("QLineEdit { color: darkgreen; font-weight: bold; "
-                             "background-color: rgba(0, 0, 0, 0);}");
-    }
 
-    if (taskStatus == "in the queue") {
-      QDateTime nowDateTime = QDateTime::currentDateTime();
-      mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
-      mLastRunFinished = "";
-      mLastRunStatus = "in the queue";
-      mTaskRunning = true;
-      ui.info->setStyleSheet("QLineEdit { color: darkgreen; font-weight: bold; "
-                             "background-color: rgba(0, 0, 0, 0);}");
-    }
-
-    if (taskStatus == "removed from the queue") {
-      QDateTime nowDateTime = QDateTime::currentDateTime();
-      mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
-      mLastRunStatus = "removed from the queue";
-      mTaskRunning = false;
-      ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
-                             "background-color: rgba(0, 0, 0, 0);}");
-    }
-
-    if (taskStatus == "finished") {
-      QDateTime nowDateTime = QDateTime::currentDateTime();
-      mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
-      mLastRunStatus = "finished";
-      mTaskRunning = false;
-      ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
-                             "background-color: rgba(0, 0, 0, 0);}");
-    }
-
-    if (taskStatus == "stopped") {
-      QDateTime nowDateTime = QDateTime::currentDateTime();
-      mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
-      mLastRunStatus = "stopped";
-      mTaskRunning = false;
-      ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
-                             "background-color: rgba(0, 0, 0, 0);}");
-    }
-
-    if (taskStatus == "error") {
-      QDateTime nowDateTime = QDateTime::currentDateTime();
-      mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
-      mLastRunStatus = "error";
-      mTaskRunning = false;
-      ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
-                             "background-color: rgba(0, 0, 0, 0);}");
-    }
-
-    updateInfoFields();
-    emit save();
+  if (taskStatus == "running") {
+    QDateTime nowDateTime = QDateTime::currentDateTime();
+    mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+    mLastRunFinished = "";
+    mLastRunStatus = "running";
+    mTaskRunning = true;
+    ui.info->setStyleSheet("QLineEdit { color: darkgreen; font-weight: bold; "
+                           "background-color: rgba(0, 0, 0, 0);}");
   }
+
+  if (taskStatus == "in the queue") {
+    QDateTime nowDateTime = QDateTime::currentDateTime();
+    mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+    mLastRunFinished = "";
+    mLastRunStatus = "in the queue";
+    mTaskRunning = true;
+    ui.info->setStyleSheet("QLineEdit { color: darkgreen; font-weight: bold; "
+                           "background-color: rgba(0, 0, 0, 0);}");
+  }
+
+  if (taskStatus == "removed from the queue") {
+    QDateTime nowDateTime = QDateTime::currentDateTime();
+    mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+    mLastRunStatus = "removed from the queue";
+    mTaskRunning = false;
+    ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
+                           "background-color: rgba(0, 0, 0, 0);}");
+  }
+
+  if (taskStatus == "task already in the queue") {
+    QDateTime nowDateTime = QDateTime::currentDateTime();
+    mLastRun = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+    mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+    mLastRunStatus = "task already in the queue";
+    mTaskRunning = false;
+    ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
+                           "background-color: rgba(0, 0, 0, 0);}");
+  }
+
+  if (taskStatus == "finished") {
+    QDateTime nowDateTime = QDateTime::currentDateTime();
+    mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+    mLastRunStatus = "finished";
+    mTaskRunning = false;
+    ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
+                           "background-color: rgba(0, 0, 0, 0);}");
+  }
+
+  if (taskStatus == "stopped") {
+    QDateTime nowDateTime = QDateTime::currentDateTime();
+    mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+    mLastRunStatus = "stopped";
+    mTaskRunning = false;
+    ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
+                           "background-color: rgba(0, 0, 0, 0);}");
+  }
+
+  if (taskStatus == "error") {
+    QDateTime nowDateTime = QDateTime::currentDateTime();
+    mLastRunFinished = nowDateTime.toString("ddd, dd-MMM-yyyy HH:mm:ss t");
+    mLastRunStatus = "error";
+    mTaskRunning = false;
+    ui.info->setStyleSheet("QLineEdit { font-weight: normal; "
+                           "background-color: rgba(0, 0, 0, 0);}");
+  }
+
+  updateInfoFields();
+  emit save();
+}
 }
 
 QDateTime SchedulerWidget::nextRun() {
@@ -912,11 +955,11 @@ QDateTime SchedulerWidget::nextRun() {
     QString cronExp = enhanceCron(mCron.trimmed()) + " *";
     QCron cron(cronExp);
 
-  QDateTime next = cron.next(nowDateTime);
-  QTime time = next.time();
+    QDateTime next = cron.next(nowDateTime);
+    QTime time = next.time();
 
-  time.setHMS(time.hour(), time.minute(), 0, 0);
-  next.setTime(time);
+    time.setHMS(time.hour(), time.minute(), 0, 0);
+    next.setTime(time);
 
     return (next);
   }
@@ -979,8 +1022,7 @@ QDateTime SchedulerWidget::nextRun() {
                                 "ddd, dd-MMM-yyyy HH:mm:ss t"));
 }
 
-
-void SchedulerWidget::updateInfoFields (void) {
+void SchedulerWidget::updateInfoFields(void) {
 
   if (!mGlobalStop) {
 
@@ -998,7 +1040,6 @@ void SchedulerWidget::updateInfoFields (void) {
     ui.nextRun->setText(mNextRun.toString("ddd, dd-MMM-yyyy HH:mm t"));
     ui.nextRun->setEnabled(false);
   }
-
 
   if (mGlobalStop) {
 
@@ -1025,7 +1066,7 @@ void SchedulerWidget::updateInfoFields (void) {
     }
 
   } else {
-   if (mSchedulerStatus == "paused") {
+    if (mSchedulerStatus == "paused") {
 
       if (mIconsColour == "white") {
         ui.showDetails->setStyleSheet(
@@ -1075,14 +1116,13 @@ void SchedulerWidget::updateInfoFields (void) {
   }
 
   if (mLastRunStatus == "removed from the queue" ||
-      mLastRunStatus == "stopped" || mLastRunStatus == "error") {
+      mLastRunStatus == "stopped" || mLastRunStatus == "error" ||
+      mLastRunStatus == "task already in the queue" ||
+      mLastRunStatus == "task already running") {
     ui.lastRunStatus->setStyleSheet("QLabel { color: red; font-weight: bold;}");
     ui.runTask->setEnabled(true);
     ui.stopTask->setEnabled(false);
   }
 
   ui.lastRunStatus->setText(mLastRunStatus);
-
 }
-
-

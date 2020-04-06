@@ -1656,6 +1656,8 @@ MainWindow::MainWindow() {
                   if (scheduler->getSchedulerRequestId() ==
                       item_queue->GetRequestId()) {
 
+                    qDebug() << "-- 6";
+
                     mRunningSchedulersCount--;
                     ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
                                                .arg(mSchedulersCount)
@@ -1685,6 +1687,7 @@ MainWindow::MainWindow() {
 
                 if (scheduler->getSchedulerRequestId() ==
                     item_queue->GetRequestId()) {
+                  qDebug() << "-- 7";
 
                   mRunningSchedulersCount--;
                   ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
@@ -1747,6 +1750,8 @@ MainWindow::MainWindow() {
 
             if (scheduler->getSchedulerRequestId() == requestId) {
 
+              qDebug() << "-- 8";
+
               mRunningSchedulersCount--;
               ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
                                          .arg(mSchedulersCount)
@@ -1800,6 +1805,7 @@ MainWindow::MainWindow() {
           scheduler->updateTaskStatus(requestId, "removed from the queue");
 
           if (scheduler->getSchedulerRequestId() == requestId) {
+            qDebug() << "-- 9";
 
             mRunningSchedulersCount--;
             ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
@@ -3192,6 +3198,7 @@ void MainWindow::addTasksToQueue() {
                   qobject_cast<SchedulerWidget *>(schedulerWidget)) {
             if (fileRequestId == scheduler->getSchedulerRequestId()) {
               transferModeSch = true;
+              scheduler->updateTaskStatus(fileRequestId, "in the queue");
             }
           }
         }
@@ -3201,6 +3208,8 @@ void MainWindow::addTasksToQueue() {
           if (transferModeSch) {
 
             taskNameDisplay = taskNameDisplay + " (*Sch)";
+
+            qDebug() << "-- 10";
 
             mRunningSchedulersCount++;
             ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
@@ -3617,6 +3626,7 @@ void MainWindow::runItem(JobOptionsListWidgetItem *item,
       QString schedulerTaskStatus;
       if (alreadyRunning) {
         schedulerTaskStatus = "already running";
+        qDebug() << "-- 11";
 
         mRunningSchedulersCount--;
         ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
@@ -4065,7 +4075,9 @@ void MainWindow::addTransfer(const QString &message, const QString &source,
 
             if (transfer->getRequestId() ==
                 scheduler->getSchedulerRequestId()) {
-
+              qDebug() << "transfer->getRequestId(): "
+                       << transfer->getRequestId();
+              qDebug() << "-- 1";
               mRunningSchedulersCount--;
               ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
                                          .arg(mSchedulersCount)
@@ -4099,7 +4111,12 @@ void MainWindow::addTransfer(const QString &message, const QString &source,
                                             "in the queue");
 
                 if (transfer->getRequestId() ==
-                    scheduler->getSchedulerRequestId()) {
+                        scheduler->getSchedulerRequestId() &&
+                    transfer->getRequestId() == item_queue->GetRequestId()) {
+
+                  qDebug() << "transfer->getRequestId(): "
+                           << transfer->getRequestId();
+                  qDebug() << "++ 2";
                   mRunningSchedulersCount++;
                   ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
                                              .arg(mSchedulersCount)
@@ -4354,6 +4371,8 @@ void MainWindow::addScheduler(const QString &taskId, const QString &taskName,
           ui.queueListWidget->takeItem(i);
           widget->updateTaskStatus(requestID, "removed from the queue");
 
+          qDebug() << "-- 3";
+
           mRunningSchedulersCount--;
           ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
                                      .arg(mSchedulersCount)
@@ -4423,6 +4442,7 @@ void MainWindow::addScheduler(const QString &taskId, const QString &taskName,
 
         if (executionMode == 0) {
           // run immediately
+          qDebug() << "++ 4";
 
           mRunningSchedulersCount++;
           ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
@@ -4434,6 +4454,21 @@ void MainWindow::addScheduler(const QString &taskId, const QString &taskName,
 
         if (executionMode == 1) {
           // add to the queue
+
+          // if the same task is already in the queue we skip adding another one
+          int queueCount = ui.queueListWidget->count();
+          for (int i = 0; i < queueCount; i++) {
+            JobOptionsListWidgetItem *item_queue =
+                static_cast<JobOptionsListWidgetItem *>(
+                    ui.queueListWidget->item(i));
+
+            JobOptions *jo_queue = item_queue->GetData();
+            QString uniqueId_queue = jo_queue->uniqueId.toString();
+            if (taskID == uniqueId_queue) {
+              widget->updateTaskStatus(requestID, "task already in the queue");
+              return;
+            }
+          }
 
           bool isQueueEmpty = (ui.queueListWidget->count() == 0);
 
@@ -4458,6 +4493,7 @@ void MainWindow::addScheduler(const QString &taskId, const QString &taskName,
 
           widget->updateTaskStatus(requestID, "in the queue");
 
+          qDebug() << "++ 5";
           mRunningSchedulersCount++;
           ui.tabs->setTabText(4, QString("Scheduler (%1)>>(%2)")
                                      .arg(mSchedulersCount)
